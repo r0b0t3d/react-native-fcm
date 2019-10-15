@@ -8,12 +8,13 @@
 #else
 @import Firebase;
 #endif
+@import UserNotifications;
 
 #import <React/RCTEventEmitter.h>
 
 @import UserNotifications;
 
-@interface RNFIRMessaging : RCTEventEmitter <RCTBridgeModule, FIRMessagingDelegate>
+@interface RNFIRMessaging : RCTEventEmitter <RCTBridgeModule, FIRMessagingDelegate, UNUserNotificationCenterDelegate>
 
 typedef void (^RCTRemoteNotificationCallback)(UIBackgroundFetchResult result);
 typedef void (^RCTWillPresentNotificationCallback)(UNNotificationPresentationOptions result);

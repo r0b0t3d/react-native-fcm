@@ -3,8 +3,6 @@
 #import <React/RCTConvert.h>
 #import <React/RCTUtils.h>
 
-@import UserNotifications;
-
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_8_0
 
 #define UIUserNotificationTypeAlert UIRemoteNotificationTypeAlert
@@ -23,13 +21,13 @@ NSString *const FCMDirectChannelConnectionChanged = @"FCMDirectChannelConnection
 
 RCT_ENUM_CONVERTER(NSCalendarUnit,
                    (@{
-                      @"year": @(NSCalendarUnitYear),
-                      @"month": @(NSCalendarUnitMonth),
-                      @"week": @(NSCalendarUnitWeekOfYear),
-                      @"day": @(NSCalendarUnitDay),
-                      @"hour": @(NSCalendarUnitHour),
-                      @"minute": @(NSCalendarUnitMinute)
-                      }),
+                       @"year": @(NSCalendarUnitYear),
+                       @"month": @(NSCalendarUnitMonth),
+                       @"week": @(NSCalendarUnitWeekOfYear),
+                       @"day": @(NSCalendarUnitDay),
+                       @"hour": @(NSCalendarUnitHour),
+                       @"minute": @(NSCalendarUnitMinute)
+                   }),
                    0,
                    integerValue)
 @end
@@ -120,14 +118,14 @@ RCT_ENUM_CONVERTER(NSCalendarUnit,
 }
 
 RCT_ENUM_CONVERTER(UIBackgroundFetchResult, (@{
-                                               @"UIBackgroundFetchResultNewData": @(UIBackgroundFetchResultNewData),
-                                               @"UIBackgroundFetchResultNoData": @(UIBackgroundFetchResultNoData),
-                                               @"UIBackgroundFetchResultFailed": @(UIBackgroundFetchResultFailed),
-                                               }), UIBackgroundFetchResultNoData, integerValue)
+    @"UIBackgroundFetchResultNewData": @(UIBackgroundFetchResultNewData),
+    @"UIBackgroundFetchResultNoData": @(UIBackgroundFetchResultNoData),
+    @"UIBackgroundFetchResultFailed": @(UIBackgroundFetchResultFailed),
+}), UIBackgroundFetchResultNoData, integerValue)
 
 RCT_ENUM_CONVERTER(UNNotificationPresentationOptions, (@{
-                                                         @"UNNotificationPresentationOptionAll": @(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionBadge | UNNotificationPresentationOptionSound),
-                                                         @"UNNotificationPresentationOptionNone": @(UNNotificationPresentationOptionNone)}), UIBackgroundFetchResultNoData, integerValue)
+    @"UNNotificationPresentationOptionAll": @(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionBadge | UNNotificationPresentationOptionSound),
+    @"UNNotificationPresentationOptionNone": @(UNNotificationPresentationOptionNone)}), UIBackgroundFetchResultNoData, integerValue)
 
 @end
 
@@ -160,17 +158,17 @@ typedef NS_ENUM(NSUInteger, UNNotificationActionType) {
 }
 
 RCT_ENUM_CONVERTER(UNNotificationActionType, (@{
-                                                @"UNNotificationActionTypeDefault": @(UNNotificationActionTypeDefault),
-                                                @"UNNotificationActionTypeTextInput": @(UNNotificationActionTypeTextInput),
-                                                }), UNNotificationActionTypeDefault, integerValue)
+    @"UNNotificationActionTypeDefault": @(UNNotificationActionTypeDefault),
+    @"UNNotificationActionTypeTextInput": @(UNNotificationActionTypeTextInput),
+}), UNNotificationActionTypeDefault, integerValue)
 
 
 RCT_MULTI_ENUM_CONVERTER(UNNotificationActionOptions, (@{
-                                                         @"UNNotificationActionOptionAuthenticationRequired": @(UNNotificationActionOptionAuthenticationRequired),
-                                                         @"UNNotificationActionOptionDestructive": @(UNNotificationActionOptionDestructive),
-                                                         @"UNNotificationActionOptionForeground": @(UNNotificationActionOptionForeground),
-                                                         @"UNNotificationActionOptionNone": @(UNNotificationActionOptionNone),
-                                                         }), UNNotificationActionOptionNone, integerValue)
+    @"UNNotificationActionOptionAuthenticationRequired": @(UNNotificationActionOptionAuthenticationRequired),
+    @"UNNotificationActionOptionDestructive": @(UNNotificationActionOptionDestructive),
+    @"UNNotificationActionOptionForeground": @(UNNotificationActionOptionForeground),
+    @"UNNotificationActionOptionNone": @(UNNotificationActionOptionNone),
+}), UNNotificationActionOptionNone, integerValue)
 
 
 @end
@@ -205,12 +203,12 @@ RCT_MULTI_ENUM_CONVERTER(UNNotificationActionOptions, (@{
 #pragma clang diagnostic ignored "-Wpartial-availability"
 
 RCT_MULTI_ENUM_CONVERTER(UNNotificationCategoryOptions, (@{
-                                                           @"UNNotificationCategoryOptionNone": @(UNNotificationCategoryOptionNone),
-                                                           @"UNNotificationCategoryOptionCustomDismissAction": @(UNNotificationCategoryOptionCustomDismissAction),
-                                                           @"UNNotificationCategoryOptionAllowInCarPlay": @(UNNotificationCategoryOptionAllowInCarPlay),
-                                                           @"UNNotificationCategoryOptionHiddenPreviewsShowTitle": @(UNNotificationCategoryOptionHiddenPreviewsShowTitle),
-                                                           @"UNNotificationCategoryOptionHiddenPreviewsShowSubtitle": @(UNNotificationCategoryOptionHiddenPreviewsShowSubtitle),
-                                                           }), UNNotificationCategoryOptionNone, integerValue)
+    @"UNNotificationCategoryOptionNone": @(UNNotificationCategoryOptionNone),
+    @"UNNotificationCategoryOptionCustomDismissAction": @(UNNotificationCategoryOptionCustomDismissAction),
+    @"UNNotificationCategoryOptionAllowInCarPlay": @(UNNotificationCategoryOptionAllowInCarPlay),
+    @"UNNotificationCategoryOptionHiddenPreviewsShowTitle": @(UNNotificationCategoryOptionHiddenPreviewsShowTitle),
+    @"UNNotificationCategoryOptionHiddenPreviewsShowSubtitle": @(UNNotificationCategoryOptionHiddenPreviewsShowSubtitle),
+}), UNNotificationCategoryOptionNone, integerValue)
 
 #pragma clang diagnostic pop
 
@@ -255,7 +253,7 @@ RCT_EXPORT_MODULE();
     [self sendNotificationEventWhenAvailable:@{@"data": data}];
 }
 
-+ (void)didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(nonnull RCTNotificationResponseCallback)completionHandler
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)(void))completionHandler
 {
     NSMutableDictionary* data = [[NSMutableDictionary alloc] initWithDictionary: response.notification.request.content.userInfo];
     [data setValue:@"notification_response" forKey:@"_notificationType"];
@@ -269,15 +267,15 @@ RCT_EXPORT_MODULE();
     }
     
     NSDictionary *userInfo = @{@"data": data, @"completionHandler": completionHandler};
-    [self sendNotificationEventWhenAvailable:userInfo];
-    
+    [RNFIRMessaging sendNotificationEventWhenAvailable:userInfo];
 }
 
-+ (void)willPresentNotification:(UNNotification *)notification withCompletionHandler:(nonnull RCTWillPresentNotificationCallback)completionHandler
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler
 {
     NSMutableDictionary* data = [[NSMutableDictionary alloc] initWithDictionary: notification.request.content.userInfo];
     [data setValue:@"will_present_notification" forKey:@"_notificationType"];
-    [self sendNotificationEventWhenAvailable:@{@"data": data, @"completionHandler": completionHandler}];
+    NSDictionary* userInfo = @{@"data": data, @"completionHandler": completionHandler};
+    [RNFIRMessaging sendNotificationEventWhenAvailable:userInfo];
 }
 
 + (void)sendNotificationEventWhenAvailable:(NSDictionary*)data
@@ -331,6 +329,9 @@ RCT_EXPORT_MODULE();
             [self sendEventWithName:FCMTokenRefreshed body:refreshToken];
         }
     });
+    
+    UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
+    [center setDelegate:self];
     
     return self;
 }
@@ -456,13 +457,13 @@ RCT_EXPORT_METHOD(deleteInstanceId:(RCTPromiseResolveBlock)resolve rejecter:(RCT
 }
 
 - (void)messaging:(nonnull FIRMessaging *)messaging didReceiveRegistrationToken:(nonnull NSString *)fcmToken {
-  refreshToken = fcmToken;
-  [self sendEventWithName:FCMTokenRefreshed body:fcmToken];
+    refreshToken = fcmToken;
+    [self sendEventWithName:FCMTokenRefreshed body:fcmToken];
 }
 
 - (void)messaging:(nonnull FIRMessaging *)messaging didRefreshRegistrationToken:(nonnull NSString *)fcmToken {
-  refreshToken = fcmToken;
-  [self sendEventWithName:FCMTokenRefreshed body:fcmToken];
+    refreshToken = fcmToken;
+    [self sendEventWithName:FCMTokenRefreshed body:fcmToken];
 }
 
 RCT_EXPORT_METHOD(requestPermissions:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
@@ -471,9 +472,21 @@ RCT_EXPORT_METHOD(requestPermissions:(RCTPromiseResolveBlock)resolve rejecter:(R
         resolve(nil);
         return;
     }
-    if (floor(NSFoundationVersionNumber) <= NSFoundationVersionNumber_iOS_9_x_Max) {
-        UIUserNotificationType allNotificationTypes =
-        (UIUserNotificationTypeSound | UIUserNotificationTypeAlert | UIUserNotificationTypeBadge);
+    if (@available(iOS 10.0, *)) {
+        UNAuthorizationOptions authOptions = UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge;
+        if (@available(iOS 12.0, *)) {
+            authOptions |= UNAuthorizationOptionProvisional;
+        }
+        UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
+        [center requestAuthorizationWithOptions:authOptions completionHandler:^(BOOL granted, NSError * _Nullable error) {
+            if(granted){
+                resolve(@{@"status": @(granted)});
+            } else {
+                reject(@"notification_error", @"Failed to grant permission", error);
+            }
+        }];
+    } else {
+        UIUserNotificationType allNotificationTypes = UIUserNotificationTypeSound | UIUserNotificationTypeAlert | UIUserNotificationTypeBadge;
         UIApplication *app = RCTSharedApplication();
         if ([app respondsToSelector:@selector(registerUserNotificationSettings:)]) {
             //iOS 8 or later
@@ -482,24 +495,6 @@ RCT_EXPORT_METHOD(requestPermissions:(RCTPromiseResolveBlock)resolve rejecter:(R
             [app registerUserNotificationSettings:notificationSettings];
         }
         resolve(nil);
-    } else {
-        // iOS 10 or later
-#if defined(__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-        UNAuthorizationOptions authOptions =
-        UNAuthorizationOptionAlert
-        | UNAuthorizationOptionSound
-        | UNAuthorizationOptionBadge;
-        [[UNUserNotificationCenter currentNotificationCenter]
-         requestAuthorizationWithOptions:authOptions
-         completionHandler:^(BOOL granted, NSError * _Nullable error) {
-             if(granted){
-                 resolve(nil);
-             } else{
-                 reject(@"notification_error", @"Failed to grant permission", error);
-             }
-         }
-         ];
-#endif
     }
     
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -663,7 +658,7 @@ RCT_EXPORT_METHOD(send:(NSString*)senderId withPayload:(NSDictionary *)message)
     [[FIRMessaging messaging]sendMessage:imMessage to:receiver withMessageID:messageID timeToLive:ttl];
 }
 
-RCT_EXPORT_METHOD(finishRemoteNotification: (NSString *)completionHandlerId fetchResult:(UIBackgroundFetchResult)result){
+RCT_EXPORT_METHOD(finishRemoteNotification:(NSString *)completionHandlerId fetchResult:(UIBackgroundFetchResult)result){
     RCTRemoteNotificationCallback completionHandler = self.notificationCallbacks[completionHandlerId];
     if (!completionHandler) {
         RCTLogError(@"There is no completion handler with completionHandlerId: %@", completionHandlerId);
@@ -673,7 +668,7 @@ RCT_EXPORT_METHOD(finishRemoteNotification: (NSString *)completionHandlerId fetc
     [self.notificationCallbacks removeObjectForKey:completionHandlerId];
 }
 
-RCT_EXPORT_METHOD(finishWillPresentNotification: (NSString *)completionHandlerId fetchResult:(UNNotificationPresentationOptions)result){
+RCT_EXPORT_METHOD(finishWillPresentNotification:(NSString *)completionHandlerId options:(UNNotificationPresentationOptions)result){
     RCTWillPresentNotificationCallback completionHandler = self.notificationCallbacks[completionHandlerId];
     if (!completionHandler) {
         RCTLogError(@"There is no completion handler with completionHandlerId: %@", completionHandlerId);

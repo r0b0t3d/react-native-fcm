@@ -4,16 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.LocalBroadcastManager;
+
+import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.bridge.ReactContext;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.FirebaseInstanceIdService;
+import com.google.firebase.messaging.FirebaseMessagingService;
 
-public class InstanceIdService extends FirebaseInstanceIdService {
+
+public class InstanceIdService extends FirebaseMessagingService {
 
     private static final String TAG = "InstanceIdService";
 
@@ -22,9 +25,9 @@ public class InstanceIdService extends FirebaseInstanceIdService {
      * the previous token had been compromised. This call is initiated by the
      * InstanceID provider.
      */
-    // [START refresh_token]
     @Override
-    public void onTokenRefresh() {
+    public void onNewToken(@NonNull String s) {
+        super.onNewToken(s);
         // Get updated InstanceID token.
         String refreshedToken = FirebaseInstanceId.getInstance().getToken();
         Log.d(TAG, "Refreshed token: " + refreshedToken);

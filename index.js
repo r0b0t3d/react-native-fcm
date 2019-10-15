@@ -151,13 +151,16 @@ FCM.getBadgeNumber = () => {
 };
 
 function finish(result) {
-  if (Platform.OS !== 'ios') {
-    return;
-  }
-  if (!this._finishCalled && this._completionHandlerId) {
+  if (!this._finishCalled) {
     this._finishCalled = true;
+    if (Platform.OS === 'ios' && !this._completionHandlerId) {
+      return;
+    }
     switch (this._notificationType) {
       case NotificationType.Remote:
+        if (Platform.OS !== 'ios') {
+          return;
+        }
         result = result || RemoteNotificationResult.NoData;
         if (!Object.values(RemoteNotificationResult).includes(result)) {
           throw new Error(`Invalid RemoteNotificationResult, use import {RemoteNotificationResult} from 'react-native-fcm' to avoid typo`);
@@ -165,6 +168,9 @@ function finish(result) {
         RNFIRMessaging.finishRemoteNotification(this._completionHandlerId, result);
         return;
       case NotificationType.NotificationResponse:
+        if (Platform.OS !== 'ios') {
+          return;
+        }
         RNFIRMessaging.finishNotificationResponse(this._completionHandlerId);
         return;
       case NotificationType.WillPresent:
@@ -172,7 +178,15 @@ function finish(result) {
         if (!Object.values(WillPresentNotificationResult).includes(result)) {
           throw new Error(`Invalid WillPresentNotificationResult, make sure you use import {WillPresentNotificationResult} from 'react-native-fcm' to avoid typo`);
         }
-        RNFIRMessaging.finishWillPresentNotification(this._completionHandlerId, result);
+        if (Platform.OS === 'ios') {
+          RNFIRMessaging.finishWillPresentNotification(this._completionHandlerId, result);
+        } else {
+          console.warn("Start present", this);
+          this.show_in_foreground = true;
+          this.priority = 'max';
+          this.vibrate = true;
+          FCM.presentLocalNotification(this);
+        }
         return;
       default:
         return;
@@ -185,17 +199,48 @@ FCM.on = (event, callback) => {
     throw new Error(`Invalid FCM event subscription, use import {FCMEvent} from 'react-native-fcm' to avoid typo`);
   };
 
+  function prepareNotification(nativeNotif) {
+    if (Platform.OS === 'android') {
+      return nativeNotif;
+    } else {
+      const notificationObj = {};
+      const dataObj = {};
+      Object.keys(nativeNotif).forEach(notifKey => {
+        const notifVal = nativeNotif[notifKey];
+        if (notifKey === 'aps') {
+          notificationObj.alert = notifVal.alert;
+          notificationObj.sound = notifVal.sound;
+          notificationObj.badgeCount = notifVal.badge;
+          notificationObj.category = notifVal.category;
+          notificationObj.contentAvailable = notifVal['content-available'];
+          notificationObj.threadID = notifVal['thread-id'];
+        } else if (notifKey === '_notificationType') {
+          notificationObj._notificationType = notifVal;
+        } else if (notifKey === '_completionHandlerId') {
+          notificationObj._completionHandlerId = notifVal;
+        } else if (notifKey === 'notification-action') {
+          notificationObj.notificationAction = notifVal;
+        } else {
+          dataObj[notifKey] = notifVal;
+        }
+      });
+      notificationObj.data = dataObj;
+      return notificationObj;
+    }
+  }
   if (event === FCMEvent.Notification) {
     return EventEmitter.addListener(event, async(data) => {
-      data.finish = finish;
+      const notification = prepareNotification(data);
+      notification.finish = finish;
       try {
-        await callback(data);
+        await callback(notification);
       } catch (err) {
         console.error('Notification handler err:\n'+err.stack);
         throw err;
       }
-      if (!data._finishCalled) {
-        data.finish();
+      
+      if (!notification._finishCalled) {
+        notification.finish();
       }
     });
   }
