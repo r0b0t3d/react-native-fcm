@@ -1,7 +1,11 @@
 package com.evollu.react.fcm;
 
+import java.util.List;
 import java.util.Map;
 
+import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,9 +16,12 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.util.Log;
 
+import com.facebook.react.HeadlessJsTaskService;
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.common.LifecycleState;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -26,6 +33,18 @@ public class MessagingService extends FirebaseMessagingService {
     private static final String TAG = "MessagingService";
 
     @Override
+    public void onNewToken(@NonNull String s) {
+        Log.d(TAG, "onNewToken event received " + s);
+
+        // Broadcast refreshed token
+        Intent i = new Intent("com.evollu.react.fcm.FCMRefreshToken");
+        Bundle bundle = new Bundle();
+        bundle.putString("token", s);
+        i.putExtras(bundle);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(i);
+    }
+
+    @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
         Log.d(TAG, "Remote message received");
         RemoteMessage.Notification remoteNotification = message.getNotification();
@@ -33,7 +52,7 @@ public class MessagingService extends FirebaseMessagingService {
         Bundle bundle = new Bundle();
         if (remoteNotification != null) {
             bundle.putString("title", remoteNotification.getTitle());
-            bundle.putString("message", remoteNotification.getBody());
+            bundle.putString("body", remoteNotification.getBody());
             bundle.putString("sound", remoteNotification.getSound());
             bundle.putString("color", remoteNotification.getColor());
         }
@@ -46,32 +65,31 @@ public class MessagingService extends FirebaseMessagingService {
 
         final Intent intent = new Intent("com.evollu.react.fcm.ReceiveNotification");
         intent.putExtras(bundle);
-        // We need to run this on the main thread, as the React code assumes that is true.
-        // Namely, DevServerHelper constructs a Handler() without a Looper, which triggers:
-        // "Can't create handler inside thread that has not called Looper.prepare()"
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            public void run() {
-                // Construct and load our normal React JS code bundle
-                ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-                ReactContext context = mReactInstanceManager.getCurrentReactContext();
-                // If it's constructed, send a notification
-                if (context != null) {
-                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
-                } else {
-                    // Otherwise wait for construction, then send the notification
-                    mReactInstanceManager.addReactInstanceEventListener(new ReactInstanceManager.ReactInstanceEventListener() {
-                        public void onReactContextInitialized(ReactContext context) {
-                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
-                        }
-                    });
-                    if (!mReactInstanceManager.hasStartedCreatingInitialContext()) {
-                        // Construct it in the background
-                        mReactInstanceManager.createReactContextInBackground();
+        if (remoteNotification != null) {
+            intent.putExtra("_notificationType", "will_present_notification");
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+        } else {
+            intent.putExtra("_notificationType", "remote");
+            // It is a data message
+            if (isAppInForeground(this.getApplicationContext())) {
+                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+            } else {
+                try {
+                    // If the app is in the background we send it to the Headless JS Service
+                    Intent headlessIntent = new Intent(
+                            this.getApplicationContext(),
+                            FIRBackgroundMessagingService.class
+                    );
+                    headlessIntent.putExtras(bundle);
+                    ComponentName name = this.getApplicationContext().startService(headlessIntent);
+                    if (name != null) {
+                        HeadlessJsTaskService.acquireWakeLockNow(this.getApplicationContext());
                     }
+                } catch (IllegalStateException ex) {
+                    Log.e(TAG, "Background messages will only work if the message priority is set to 'high'", ex);
                 }
             }
-        });
+        }
     }
 
     public void handleBadge(Map<String, String> data) {
@@ -91,21 +109,39 @@ public class MessagingService extends FirebaseMessagingService {
         }
     }
 
-    public void buildLocalNotification(RemoteMessage remoteMessage) {
-        if (remoteMessage.getData() == null) {
-            return;
-        }
-        Map<String, String> data = remoteMessage.getData();
-        String customNotification = data.get("custom_notification");
-        if (customNotification != null) {
-            try {
-                Bundle bundle = BundleJSONConverter.convertToBundle(new JSONObject(customNotification));
-                FIRLocalMessagingHelper helper = new FIRLocalMessagingHelper(this.getApplication());
-                helper.sendNotification(bundle);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+    /**
+     * We need to check if app is in foreground otherwise the app will crash.
+     * http://stackoverflow.com/questions/8489993/check-android-application-is-in-foreground-or-not
+     *
+     * @param context Context
+     * @return boolean
+     */
+    public boolean isAppInForeground(Context context) {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        if (activityManager == null) return false;
 
+        List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
+        if (appProcesses == null) return false;
+
+        final String packageName = context.getPackageName();
+        for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+            if (
+                    appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+                            && appProcess.processName.equals(packageName)
+            ) {
+                ReactContext reactContext;
+
+                try {
+                    reactContext = (ReactContext) context;
+                } catch (ClassCastException exception) {
+                    // Not react context so default to true
+                    return true;
+                }
+
+                return reactContext.getLifecycleState() == LifecycleState.RESUMED;
+            }
         }
+
+        return false;
     }
 }

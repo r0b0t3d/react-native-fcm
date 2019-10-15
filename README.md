@@ -1,33 +1,9 @@
-[![Join the chat at https://gitter.im/evollu/react-native-fcm](https://badges.gitter.im/evollu/react-native-fcm.svg)](https://gitter.im/evollu/react-native-fcm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-## Deprecated
-I'm not longer able to maintain this repo.
-check [react-native-firebase](https://rnfirebase.io) instead
-
-### To existing react-native-fcm users
-`react-native-firebase` now can do what `react-native-fcm` can so it is a waste of effort to build the same thing in parallel. 
-
-Since I'm getting busier these days and start feeling challenging to maintain this repo every day while `react-native-firebase` has a larger team/company backing it, existing users may consider migrating to `react-native-firebase`.
-
-I've created [an example project](https://github.com/evollu/react-native-fcm/tree/firebase/Examples/firebase-migration) using react-native-firebase as a migration reference
-
-`react-native-fcm` will still take PRs and bug fixes, but possibly no new feature developement any more.
-
-
-
-### Versions
-- after v16.0.0, Android target SDK has be to >= 26 and build tool has to be >= 26.0.x
-- for iOS SDK < 4, use react-native-fcm@6.2.3 (v6.x is still compatible with Firebase SDK v4)
-- for RN < 0.40.0, use react-native-fcm@2.5.6
-- for RN < 0.33.0, use react-native-fcm@1.1.0
-- for RN < 0.30.0, use react-native-fcm@1.0.15
-
-### Example
-- An example working project is available at: https://github.com/evollu/react-native-fcm/tree/master/Examples/simple-fcm-client
 
 ## Installation
 
-- Run `npm install react-native-fcm --save`
+- Run `npm install react-native-fcm --save` or `yarn add react-native-fcm`
+
+### For RN < 0.60
 - [Link libraries](https://facebook.github.io/react-native/docs/linking-libraries-ios.html)
   Note: the auto link doesn't work with xcworkspace so CocoaPods user needs to do manual linking
 - You many need [this package for huawei phone](https://github.com/pgengoux/react-native-huawei-protected-apps)
@@ -108,16 +84,10 @@ apply plugin: 'com.google.gms.google-services'
 
 +   <service android:name="com.evollu.react.fcm.MessagingService" android:enabled="true" android:exported="true">
 +     <intent-filter>
++       <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
 +       <action android:name="com.google.firebase.MESSAGING_EVENT"/>
 +     </intent-filter>
 +   </service>
-
-+   <service android:name="com.evollu.react.fcm.InstanceIdService" android:exported="false">
-+     <intent-filter>
-+       <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
-+     </intent-filter>
-+   </service>
-
     ...
 ```
 
@@ -336,29 +306,10 @@ Edit `AppDelegate.m`:
   {
   //...
 +   [FIRApp configure];
-+   [[UNUserNotificationCenter currentNotificationCenter] setDelegate:self];
 
     return YES;
  }
 
-+
-+ - (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler
-+ {
-+   [RNFIRMessaging willPresentNotification:notification withCompletionHandler:completionHandler];
-+ }
-+
-+ #if defined(__IPHONE_11_0)
-+ - (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)(void))completionHandler
-+ {
-+   [RNFIRMessaging didReceiveNotificationResponse:response withCompletionHandler:completionHandler];
-+ }
-+ #else
-+ - (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler
-+ {
-+   [RNFIRMessaging didReceiveNotificationResponse:response withCompletionHandler:completionHandler];
-+ }
-+ #endif
-+
 + //You can skip this method if you don't want to use local notification
 + -(void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification {
 +   [RNFIRMessaging didReceiveLocalNotification:notification];
