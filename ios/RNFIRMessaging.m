@@ -14,6 +14,7 @@
 #endif
 
 NSString *const FCMNotificationReceived = @"FCMNotificationReceived";
+NSString *const FCMNotificationOpened = @"FCMNotificationOpened";
 NSString *const FCMTokenRefreshed = @"FCMTokenRefreshed";
 NSString *const FCMDirectChannelConnectionChanged = @"FCMDirectChannelConnectionChanged";
 
@@ -39,8 +40,8 @@ RCT_ENUM_CONVERTER(NSCalendarUnit,
 {
     NSDictionary<NSString *, id> *details = [self NSDictionary:json];
     UNMutableNotificationContent *content = [UNMutableNotificationContent new];
-    content.title =[RCTConvert NSString:details[@"title"]];
-    content.body =[RCTConvert NSString:details[@"body"]];
+    content.title = [RCTConvert NSString:details[@"title"]];
+    content.body = [RCTConvert NSString:details[@"body"]];
     NSString* sound = [RCTConvert NSString:details[@"sound"]];
     if(sound != nil){
         if ([sound isEqual:@"default"]) {
@@ -55,7 +56,7 @@ RCT_ENUM_CONVERTER(NSCalendarUnit,
     
     NSDate *fireDate = [RCTConvert NSDate:details[@"fire_date"]];
     
-    if(fireDate == nil){
+    if (fireDate == nil) {
         return [UNNotificationRequest requestWithIdentifier:[RCTConvert NSString:details[@"id"]] content:content trigger:nil];
     }
     
@@ -232,7 +233,7 @@ static NSString* refreshToken;
 RCT_EXPORT_MODULE();
 
 - (NSArray<NSString *> *)supportedEvents {
-    return @[FCMNotificationReceived, FCMTokenRefreshed, FCMDirectChannelConnectionChanged];
+    return @[FCMNotificationReceived, FCMNotificationOpened, FCMTokenRefreshed, FCMDirectChannelConnectionChanged];
 }
 
 + (BOOL)requiresMainQueueSetup {
@@ -243,14 +244,14 @@ RCT_EXPORT_MODULE();
     NSMutableDictionary* data = [[NSMutableDictionary alloc] initWithDictionary: userInfo];
     [data setValue:@"remote_notification" forKey:@"_notificationType"];
     [data setValue:@(RCTSharedApplication().applicationState == UIApplicationStateInactive) forKey:@"opened_from_tray"];
-    [self sendNotificationEventWhenAvailable:@{@"data": data, @"completionHandler": completionHandler}];
+    [self sendNotificationEventWhenAvailable:FCMNotificationReceived data:@{@"data": data, @"completionHandler": completionHandler}];
 }
 
 + (void)didReceiveLocalNotification:(UILocalNotification *)notification {
     NSMutableDictionary* data = [[NSMutableDictionary alloc] initWithDictionary: notification.userInfo];
     [data setValue:@"local_notification" forKey:@"_notificationType"];
     [data setValue:@(RCTSharedApplication().applicationState == UIApplicationStateInactive) forKey:@"opened_from_tray"];
-    [self sendNotificationEventWhenAvailable:@{@"data": data}];
+    [self sendNotificationEventWhenAvailable:FCMNotificationReceived data:@{@"data": data}];
 }
 
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)(void))completionHandler
@@ -267,7 +268,7 @@ RCT_EXPORT_MODULE();
     }
     
     NSDictionary *userInfo = @{@"data": data, @"completionHandler": completionHandler};
-    [RNFIRMessaging sendNotificationEventWhenAvailable:userInfo];
+    [RNFIRMessaging sendNotificationEventWhenAvailable:FCMNotificationOpened data:userInfo];
 }
 
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler
@@ -275,10 +276,10 @@ RCT_EXPORT_MODULE();
     NSMutableDictionary* data = [[NSMutableDictionary alloc] initWithDictionary: notification.request.content.userInfo];
     [data setValue:@"will_present_notification" forKey:@"_notificationType"];
     NSDictionary* userInfo = @{@"data": data, @"completionHandler": completionHandler};
-    [RNFIRMessaging sendNotificationEventWhenAvailable:userInfo];
+    [RNFIRMessaging sendNotificationEventWhenAvailable:FCMNotificationReceived data:userInfo];
 }
 
-+ (void)sendNotificationEventWhenAvailable:(NSDictionary*)data
++ (void)sendNotificationEventWhenAvailable:(NSString*)event data:(NSDictionary*)data
 {
     if(!jsHandlerRegistered){
         // JS hasn't registered callback yet. hold on that
@@ -287,21 +288,25 @@ RCT_EXPORT_MODULE();
         }
         [pendingNotifications addObject:data];
     } else {
-        [[NSNotificationCenter defaultCenter] postNotificationName:FCMNotificationReceived object:self userInfo:data];
+        [[NSNotificationCenter defaultCenter] postNotificationName:event object:self userInfo:data];
     }
 }
 
 - (void)dealloc
 {
+    jsHandlerRegistered = false;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (instancetype)init {
     self = [super init];
-    
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleNotificationReceived:)
                                                  name:FCMNotificationReceived
+                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleNotificationOpened:)
+                                                 name:FCMNotificationOpened
                                                object:nil];
     
     [[NSNotificationCenter defaultCenter]
@@ -349,15 +354,13 @@ RCT_EXPORT_MODULE();
 
 -(void) sendPendingNotifications {
     static dispatch_once_t onceToken;
+    jsHandlerRegistered = true;
     dispatch_once(&onceToken, ^{
-        jsHandlerRegistered = true;
-        
         for (NSDictionary* data in pendingNotifications) {
             [[NSNotificationCenter defaultCenter] postNotificationName:FCMNotificationReceived object:self userInfo:data];
         }
         
         [pendingNotifications removeAllObjects];
-        
     });
 }
 
@@ -702,6 +705,22 @@ RCT_EXPORT_METHOD(finishNotificationResponse: (NSString *)completionHandlerId){
         data[@"_completionHandlerId"] = completionHandlerId;
     }
     [self sendEventWithName:FCMNotificationReceived body:data];
+}
+
+- (void)handleNotificationOpened:(NSNotification *)notification
+{
+    id completionHandler = notification.userInfo[@"completionHandler"];
+    NSMutableDictionary* data = notification.userInfo[@"data"];
+    if(completionHandler != nil){
+        NSString *completionHandlerId = [[NSUUID UUID] UUIDString];
+        if (!self.notificationCallbacks) {
+            // Lazy initialization
+            self.notificationCallbacks = [NSMutableDictionary dictionary];
+        }
+        self.notificationCallbacks[completionHandlerId] = completionHandler;
+        data[@"_completionHandlerId"] = completionHandlerId;
+    }
+    [self sendEventWithName:FCMNotificationOpened body:data];
 }
 
 - (void)sendDataMessageFailure:(NSNotification *)notification

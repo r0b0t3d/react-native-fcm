@@ -2,6 +2,7 @@ declare module "react-native-fcm" {
   type FCMEventType =
     | "FCMTokenRefreshed"
     | "FCMNotificationReceived"
+    | "FCMNotificationOpened"
     | "FCMDirectChannelConnectionChanged";
   export namespace FCMEvent {
     const RefreshToken = "FCMTokenRefreshed";
@@ -126,15 +127,19 @@ declare module "react-native-fcm" {
     options?: NotificationCategoryOption | NotificationCategoryOption[];
   }
 
+  export type PermissionStatus = {
+    status: boolean;
+  }
+
   export class FCM {
-    static requestPermissions(): Promise<void>;
+    static requestPermissions(): Promise<PermissionStatus>;
     static getFCMToken(): Promise<string>;
     static on(
       event: "FCMTokenRefreshed",
       handler: (token: string) => void
     ): Subscription;
     static on(
-      event: "FCMNotificationReceived",
+      event: "FCMNotificationReceived" | "FCMNotificationOpened",
       handler: (notification: Notification) => void
     ): Subscription;
     static subscribeToTopic(topic: string): void;

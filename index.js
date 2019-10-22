@@ -5,6 +5,7 @@ const EventEmitter = new NativeEventEmitter(NativeModules.RNFIRMessaging || {});
 export const FCMEvent = {
   RefreshToken: 'FCMTokenRefreshed',
   Notification: 'FCMNotificationReceived',
+  NotificationOpened: 'FCMNotificationOpened',
   DirectChannelConnectionChanged: 'FCMDirectChannelConnectionChanged'
 };
 
@@ -204,7 +205,6 @@ FCM.on = (event, callback) => {
       return nativeNotif;
     } else {
       const notificationObj = {};
-      const dataObj = {};
       Object.keys(nativeNotif).forEach(notifKey => {
         const notifVal = nativeNotif[notifKey];
         if (notifKey === 'aps') {
@@ -221,14 +221,13 @@ FCM.on = (event, callback) => {
         } else if (notifKey === 'notification-action') {
           notificationObj.notificationAction = notifVal;
         } else {
-          dataObj[notifKey] = notifVal;
+          notificationObj[notifKey] = notifVal;
         }
       });
-      notificationObj.data = dataObj;
       return notificationObj;
     }
   }
-  if (event === FCMEvent.Notification) {
+  if (event === FCMEvent.Notification || event === FCMEvent.NotificationOpened) {
     return EventEmitter.addListener(event, async(data) => {
       const notification = prepareNotification(data);
       notification.finish = finish;

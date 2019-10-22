@@ -620,7 +620,7 @@ Local notification implementation is inspired by react-native-push-notification 
 #### I get the notifications in the logs, but the native prompt does not show up
 Did you remember to ask the user permissions? ;)
 ```js
-await FCM.requestPermissions({ badge: false, sound: true, alert: true })
+await FCM.requestPermissions()
 ```
 
 ## Sending remote notification
