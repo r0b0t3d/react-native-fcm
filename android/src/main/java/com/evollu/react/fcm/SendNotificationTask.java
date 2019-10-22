@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -78,7 +79,9 @@ public class SendNotificationTask extends AsyncTask<Void, Void, Void> {
             String subText = bundle.getString("sub_text");
             if (subText != null) subText = URLDecoder.decode( subText, "UTF-8" );
 
-            NotificationCompat.Builder notification = new NotificationCompat.Builder(mContext, bundle.getString("channel"))
+            String channel = bundle.containsKey("channel") ? bundle.getString("channel") : getDefaultChannel();
+
+            NotificationCompat.Builder notification = new NotificationCompat.Builder(mContext, channel)
                     .setContentTitle(title)
                     .setContentText(body)
                     .setTicker(ticker)
@@ -313,6 +316,20 @@ public class SendNotificationTask extends AsyncTask<Void, Void, Void> {
         } catch (IOException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private String getDefaultChannel() {
+        try {
+            ApplicationInfo applicationInfo = mContext.getPackageManager().getApplicationInfo(mContext.getPackageName(), PackageManager.GET_META_DATA);
+            String channel = applicationInfo.metaData.getString("com.google.firebase.messaging.default_notification_channel_id");
+            if (channel == null) {
+                channel = "default";
+            }
+            return channel;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return "default";
         }
     }
 
