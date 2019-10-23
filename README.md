@@ -447,7 +447,13 @@ FCM.on('FCMNotificationOpened', (notification: Notificaiton) => {
 
   notification.finish();
 })
-``` 
+```
+
+### 7. [Android only] Handle data message on background
+Add to your `index.js`
+```
+AppRegistry.registerHeadlessTask('FIRBackgroundMessage', () => bgNotification);
+```
 ---
 
 ### Build custom push notification for Android

@@ -366,7 +366,7 @@ RCT_EXPORT_MODULE();
 
 RCT_EXPORT_METHOD(enableDirectChannel)
 {
-    [[FIRMessaging messaging] setShouldEstablishDirectChannel:@YES];
+    [[FIRMessaging messaging] setShouldEstablishDirectChannel:YES];
 }
 
 RCT_EXPORT_METHOD(isDirectChannelEstablished:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
