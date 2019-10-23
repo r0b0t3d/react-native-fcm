@@ -375,9 +375,80 @@ Edit AndroidManifest.xml
 NOTE: `com.evollu.react.fcm.FIRLocalMessagingPublisher` is required for presenting local notifications. `com.evollu.react.fcm.FIRSystemBootEventReceiver` is required only if you need to schedule future or recurring local notifications
 
 
-## Usage
+# Usage
 [Check example project](https://github.com/evollu/react-native-fcm/blob/master/Examples/simple-fcm-client/app/App.js#L68)
 
+```
+import FCM from 'react-native-fcm';
+```
+
+### 1. requestPermissions
+```
+const result = await FCM.requestPermissions();
+if (!result.status) {
+  console.log("Permission not granted");
+  return;
+}
+```
+
+### 2. getFCMToken
+```
+const token = await FCM.getFCMToken();
+console.log('FCM token', token);
+```
+
+### 3. createNotificationChannel
+```
+FCM.createNotificationChannel({
+  id: 'channel_id',
+  name: 'Channel name',
+  description: 'Default notification channel',
+  priority: 'max',
+});
+```
+
+### 4. getInitialNotification
+```
+FCM.getInitialNotification().then(notification => {
+  console.warn(notification);
+});
+```
+
+### 5. FCM.on('FCMNotificationReceived', callback);
+
+```javascript
+import { Notification, NotificationType } from 'react-native-fcm';
+
+FCM.on('FCMNotificationReceived', (notification: Notification) => {
+  if (notification.notificationType === NotificationType.Remote) {
+    notification.finish(RemoteNotificationResult.NoData);
+  } else {
+    notification.finish(WillPresentNotificationResult.All);
+  }
+});
+```
+#### notificationType
+1. `NotificationType.WillPresent`: This notification come when app in foreground. There are two options to handle this notification.
+- Display this notification in notification center
+```javascript
+notification.finish(WillPresentNotificationResult.All);
+```
+- Do nothing (default)
+```javascript
+notification.finish(WillPresentNotificationResult.None);
+```
+
+2. `NotificationType.Remote`: This is `data` only message. Can be triggered when app is in background
+
+### 6. FCM.on('FCMNotificationOpened', callback)
+```javascript
+FCM.on('FCMNotificationOpened', (notification: Notificaiton) => {
+  // Handle when notification clicked
+
+  notification.finish();
+})
+``` 
+---
 
 ### Build custom push notification for Android
 Firebase android misses important feature of android notification like `group`, `priority` and etc. As a work around you can send data message (no `notification` payload at all) and this repo will build a local notification for you. If you pass `custom_notification` in the payload, the repo will treat the content as a local notification config and shows immediately.

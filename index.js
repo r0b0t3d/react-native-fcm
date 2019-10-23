@@ -157,7 +157,7 @@ function finish(result) {
     if (Platform.OS === 'ios' && !this._completionHandlerId) {
       return;
     }
-    switch (this._notificationType) {
+    switch (this.notificationType) {
       case NotificationType.Remote:
         if (Platform.OS !== 'ios') {
           return;
@@ -214,8 +214,8 @@ FCM.on = (event, callback) => {
           notificationObj.category = notifVal.category;
           notificationObj.contentAvailable = notifVal['content-available'];
           notificationObj.threadID = notifVal['thread-id'];
-        } else if (notifKey === '_notificationType') {
-          notificationObj._notificationType = notifVal;
+        } else if (notifKey === 'notificationType') {
+          notificationObj.notificationType = notifVal;
         } else if (notifKey === '_completionHandlerId') {
           notificationObj._completionHandlerId = notifVal;
         } else if (notifKey === 'notification-action') {

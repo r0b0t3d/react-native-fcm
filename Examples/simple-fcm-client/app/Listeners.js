@@ -48,7 +48,7 @@ export function registerAppListener(navigation){
   FCM.on(FCMEvent.Notification, notif => {
     console.log("Notification", notif);
 
-    if(Platform.OS ==='ios' && notif._notificationType === NotificationType.WillPresent && !notif.local_notification){
+    if(Platform.OS ==='ios' && notif.notificationType === NotificationType.WillPresent && !notif.local_notification){
       // this notification is only to decide if you want to show the notification when user if in foreground.
       // usually you can ignore it. just decide to show or not.
       notif.finish(WillPresentNotificationResult.All)
@@ -70,8 +70,8 @@ export function registerAppListener(navigation){
             //optional
             //iOS requires developers to call completionHandler to end notification process. If you do not call it your background remote notifications could be throttled, to read more about it see the above documentation link.
             //This library handles it for you automatically with default behavior (for remote notification, finish with NoData; for WillPresent, finish depend on "show_in_foreground"). However if you want to return different result, follow the following code to override
-            //notif._notificationType is available for iOS platfrom
-            switch(notif._notificationType){
+            //notif.notificationType is available for iOS platfrom
+            switch(notif.notificationType){
               case NotificationType.Remote:
                 notif.finish(RemoteNotificationResult.NewData) //other types available: RemoteNotificationResult.NewData, RemoteNotificationResult.ResultFailed
                 break;

@@ -66,7 +66,7 @@ declare module "react-native-fcm" {
       title?: string;
     };
     local_notification?: boolean;
-    _notificationType: string;
+    notificationType: string;
     _actionIdentifier?: string;
     _userText?: string;
     finish(type?: string): void;

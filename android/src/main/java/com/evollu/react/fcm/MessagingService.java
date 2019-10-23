@@ -66,10 +66,10 @@ public class MessagingService extends FirebaseMessagingService {
         final Intent intent = new Intent("com.evollu.react.fcm.ReceiveNotification");
         intent.putExtras(bundle);
         if (remoteNotification != null) {
-            intent.putExtra("_notificationType", "will_present_notification");
+            intent.putExtra("notificationType", "will_present_notification");
             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
         } else {
-            intent.putExtra("_notificationType", "remote");
+            intent.putExtra("notificationType", "remote");
             // It is a data message
             if (isAppInForeground(this.getApplicationContext())) {
                 LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
