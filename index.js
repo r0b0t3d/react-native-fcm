@@ -51,8 +51,43 @@ const RNFIRMessaging = NativeModules.RNFIRMessaging;
 
 const FCM = {};
 
-FCM.getInitialNotification = () => {
-  return RNFIRMessaging.getInitialNotification();
+function prepareNotification(nativeNotif) {
+  if (Platform.OS === 'android') {
+    return nativeNotif;
+  } else {
+    const notificationObj = {};
+    const dataObj = {};
+    Object.keys(nativeNotif).forEach(notifKey => {
+      const notifVal = nativeNotif[notifKey];
+      if (notifKey === 'aps') {
+        notificationObj.alert = notifVal.alert;
+        notificationObj.sound = notifVal.sound;
+        notificationObj.badgeCount = notifVal.badge;
+        notificationObj.category = notifVal.category;
+        notificationObj.contentAvailable = notifVal['content-available'];
+        notificationObj.threadID = notifVal['thread-id'];
+      } else if (notifKey === 'notificationType') {
+        notificationObj.notificationType = notifVal;
+      } else if (notifKey === '_completionHandlerId') {
+        notificationObj._completionHandlerId = notifVal;
+      } else if (notifKey === 'notification-action') {
+        notificationObj.notificationAction = notifVal;
+      } else if (notifKey !== 'data') {
+        dataObj[notifKey] = notifVal;
+      } else {
+        notificationObj[notifKey] = notifVal;
+      }
+    });
+    if (!notificationObj['data']) {
+      notificationObj.data = dataObj;
+    }
+    return notificationObj;
+  }
+}
+
+FCM.getInitialNotification = async () => {
+  const nativeNoti = await RNFIRMessaging.getInitialNotification();
+  return prepareNotification(nativeNoti);
 };
 
 FCM.enableDirectChannel = () => {
@@ -203,39 +238,6 @@ FCM.on = (event, callback) => {
     throw new Error(`Invalid FCM event subscription, use import {FCMEvent} from 'react-native-fcm' to avoid typo`);
   };
 
-  function prepareNotification(nativeNotif) {
-    if (Platform.OS === 'android') {
-      return nativeNotif;
-    } else {
-      const notificationObj = {};
-      const dataObj = {};
-      Object.keys(nativeNotif).forEach(notifKey => {
-        const notifVal = nativeNotif[notifKey];
-        if (notifKey === 'aps') {
-          notificationObj.alert = notifVal.alert;
-          notificationObj.sound = notifVal.sound;
-          notificationObj.badgeCount = notifVal.badge;
-          notificationObj.category = notifVal.category;
-          notificationObj.contentAvailable = notifVal['content-available'];
-          notificationObj.threadID = notifVal['thread-id'];
-        } else if (notifKey === 'notificationType') {
-          notificationObj.notificationType = notifVal;
-        } else if (notifKey === '_completionHandlerId') {
-          notificationObj._completionHandlerId = notifVal;
-        } else if (notifKey === 'notification-action') {
-          notificationObj.notificationAction = notifVal;
-        } else if (notifKey !== 'data') {
-          dataObj[notifKey] = notifVal;
-        } else {
-          notificationObj[notifKey] = notifVal;
-        }
-      });
-      if (!notificationObj['data']) {
-        notificationObj.data = dataObj;
-      }
-      return notificationObj;
-    }
-  }
   if (event === FCMEvent.Notification || event === FCMEvent.NotificationOpened) {
     return EventEmitter.addListener(event, async(data) => {
       const notification = prepareNotification(data);
