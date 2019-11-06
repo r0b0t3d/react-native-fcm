@@ -87,7 +87,10 @@ FCM.getAPNSToken = () => {
   }
 };
 
-FCM.requestPermissions = () => {
+FCM.requestPermissions = (options = ['alert', 'sound', 'badge', 'provisional']) => {
+  if (Platform.OS === 'ios') {
+    return RNFIRMessaging.requestPermissions(options);
+  }
   return RNFIRMessaging.requestPermissions();
 };
 
@@ -205,6 +208,7 @@ FCM.on = (event, callback) => {
       return nativeNotif;
     } else {
       const notificationObj = {};
+      const dataObj = {};
       Object.keys(nativeNotif).forEach(notifKey => {
         const notifVal = nativeNotif[notifKey];
         if (notifKey === 'aps') {
@@ -220,10 +224,15 @@ FCM.on = (event, callback) => {
           notificationObj._completionHandlerId = notifVal;
         } else if (notifKey === 'notification-action') {
           notificationObj.notificationAction = notifVal;
+        } else if (notifKey !== 'data') {
+          dataObj[notifKey] = notifVal;
         } else {
           notificationObj[notifKey] = notifVal;
         }
       });
+      if (!notificationObj['data']) {
+        notificationObj.data = dataObj;
+      }
       return notificationObj;
     }
   }

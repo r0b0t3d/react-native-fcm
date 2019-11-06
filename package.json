@@ -3,13 +3,13 @@
     "name": "Libin Lu"
   },
   "bugs": {
-    "url": "https://github.com/evollu/react-native-fcm/issues"
+    "url": "https://github.com/r0b0t3d/react-native-fcm/issues"
   },
   "description": "React Native bridge for firebase cloud messaging (FCM)",
   "peerDependencies": {
     "react-native": ">=0.40.0"
   },
-  "homepage": "https://github.com/evollu/react-native-fcm",
+  "homepage": "https://github.com/r0b0t3d/react-native-fcm",
   "keywords": [
     "React-Native",
     "ios",
@@ -19,10 +19,10 @@
     "cloud messaging"
   ],
   "license": "MIT",
-  "name": "react-native-fcm",
+  "name": "react-native-fcm2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/evollu/react-native-fcm.git"
+    "url": "git+https://github.com/r0b0t3d/react-native-fcm.git"
   },
-  "version": "16.2.4"
+  "version": "1.0.0"
 }

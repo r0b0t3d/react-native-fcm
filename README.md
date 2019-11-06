@@ -1,7 +1,11 @@
 
+## Note
+
+This is a fork from [react-native-fcm](https://github.com/evollu/react-native-fcm). Since that repo has been deprecated.
+
 ## Installation
 
-- Run `npm install react-native-fcm --save` or `yarn add react-native-fcm`
+- Run `npm install react-native-fcm2 --save` or `yarn add react-native-fcm2`
 
 ### For RN < 0.60
 - [Link libraries](https://facebook.github.io/react-native/docs/linking-libraries-ios.html)
@@ -22,53 +26,9 @@ https://firebase.google.com/docs/cloud-messaging/ios/certs
 
 ## Android Configuration
 
-- As `react-native link` sometimes has glitches, make sure you have this line added
-
-### Edit `android/build.gradle`:
-
-**NOTE:** The followed line may not be up-to-dated. Please refer to https://firebase.google.com/docs/android/setup
-
-```
-buildscript {
-    repositories {
-        // ...
-        google() // Google's Maven repository
-    }
-    // ...
-    dependencies {
-        // ...
-        classpath 'com.google.gms:google-services:4.0.2' // google-services plugin
-    }
-}
-
-allprojects {
-    // ...
-    repositories {
-        // ...
-        google() // Google's Maven repository
-    }
-}
-```
-
-### Edit `android/app/build.gradle`:
-
-**NOTE:** Please refer to https://firebase.google.com/docs/android/setup
-
-```
-dependencies {
-    // ...
-    compile project(':react-native-fcm')
-
-    // ...
-    
-    // Automatically selecting the latest available version
-    implementation 'com.google.firebase:firebase-core'
-    implementation 'com.google.firebase:firebase-messaging'
-}
-
-// ADD THIS AT THE BOTTOM
-apply plugin: 'com.google.gms.google-services'
-```
+Please refer to 
+1. https://firebase.google.com/docs/android/setup
+2. https://firebase.google.com/docs/cloud-messaging/android/client
 
 ### Edit `android/app/src/main/AndroidManifest.xml`:
 
@@ -91,46 +51,6 @@ apply plugin: 'com.google.gms.google-services'
     ...
 ```
 
-### Edit `android/app/build.gradle`:
-
-**NOTE:** after v16.0.0, Android target SDK has be to >= 26 and build tool has to be >= 26.0.x
-
-**NOTE:** Make sure the version matches this library.
-
-```diff
-+ compileSdkVersion 27
-+    buildToolsVersion "27.0.3"
-
-    defaultConfig {
-        applicationId "com.google.firebase.quickstart.fcm"
-        minSdkVersion 16
-+        targetSdkVersion 27
-        versionCode 1
-        versionName "1.0"
-        ndk {
-            abiFilters "armeabi-v7a", "x86"
-        }
-    }
-
- dependencies {
-+    compile project(':react-native-fcm')
-     compile fileTree(dir: "libs", include: ["*.jar"])
-     compile "com.facebook.react:react-native:+"  // From node_modules
- }
- 
- //bottom
- + apply plugin: "com.google.gms.google-services"
-```
-If you are using other firebase libraries, check this for solving dependency conflicts https://github.com/evollu/react-native-fcm/blob/master/Examples/simple-fcm-client/android/app/build.gradle#L133
-
-### Edit `android/settings.gradle`
-```diff
-  ...
-+ include ':react-native-fcm'
-+ project(':react-native-fcm').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-fcm/android')
-  include ':app'
-```
-
 - Edit `MainActivity.java`. This fixes [a bug](https://stackoverflow.com/questions/14853327/intent-not-restored-correctly-after-activity-is-killed-if-clear-top-and-single-t/18307360#18307360)
 ```diff
 + import android.content.Intent;
@@ -142,27 +62,6 @@ public class MainActivity extends ReactActivity {
 +        setIntent(intent);
 +    }
 }
-```
-
-### Make sure in `MainApplication.java` you have the code below:
-
-**NOTE:** The packages listed inside should appear once only. `react-native link` sometimes can mess up this part, please remove duplicated packeges.
-
-```diff
-    @Override
-    protected List<ReactPackage> getPackages() {
-      return Arrays.<ReactPackage>asList(
-          new MainReactPackage(),
-            new MapsPackage(),
-+           new FIRMessagingPackage()
-      );
-    }
-
-+ @Override
-+  public void onCreate() { // <-- Check this block exists
-+    super.onCreate();
-+    SoLoader.init(this, /* native exopackage */ false); // <-- Check this line exists within the block
-+  }
 ```
 
 ### Config for notification and `click_action` in Android
@@ -188,64 +87,6 @@ Edit `AndroidManifest.xml`:
 Notes:
 - `launchMode="singleTop"` is to reuse MainActivity, you can use `singleTask` or `singleInstance` as well depend on your need. [this link explains the behavior well](https://blog.mindorks.com/android-activity-launchmode-explained-cbc6cf996802)
 - you if want to handle `click_action` you need to add custom intent-filter, check native android documentation
-
-
-If you are using RN < 0.30.0 and react-native-fcm < 1.0.16, pass intent into package, edit `MainActivity.java`:
-
-- RN 0.28:
-
-```diff
-  import com.facebook.react.ReactActivity;
-+ import android.content.Intent;
-
-  public class MainActivity extends ReactActivity {
-
-+   @Override
-+   public void onNewIntent (Intent intent) {
-+     super.onNewIntent(intent);
-+       setIntent(intent);
-+   }       
-```
-
-NOTE: Verify that react-native links correctly in `MainApplication.java`
-
-```diff
-import android.app.application
-...
-+import com.evollu.react.fcm.FIRMessagingPackage;
-```
-....
-```diff
-    @Override
-    protected List<ReactPackage> getPackages() {
-      return Arrays.<ReactPackage>asList(
-          new MainReactPackage(),
-          new VectorIconsPackage(),
-+         new FIRMessagingPackage(),
-          new RNDeviceInfo(),
-      );
-    }
- ```   
-
-
-
-- RN <= 0.27:
-
-```diff
-  import com.facebook.react.ReactActivity;
-+ import android.content.Intent;
-
-  public class MainActivity extends ReactActivity {
-
-+   @Override
-+   protected void onNewIntent (Intent intent) {
-+     super.onNewIntent(intent);
-+       setIntent(intent);
-+   }       
-```
-
-Notes:
-- `@Override` is added to update intent on notification click
 
 ## IOS Configuration
 
@@ -277,25 +118,6 @@ NOTE: there is a working example in `master` branch
 
 NOTE: If you don't put `pod 'Firebase'` into `Podfile`, compilation will fail with error of missing Firebase library.
 
-### Non Cocoapod approach
-
-1. Follow the instruction on [Integrate without CocoaPods](https://firebase.google.com/docs/ios/setup#frameworks).
-- Import libraries, add Capabilities (background running and push notification), upload APNS and etc etc etc...
-2. Put frameworks under `ios/Frameworks` folder, and drag those files into your xcode solution -> Frameworks
-3. Put `firebase.h` and `module.modulemap` under `ios/Frameworks` folder, no need to drag into solution
-4. Modify your project's `User Header Search Paths` and add `$(PROJECT_DIR)/Frameworks`
-<img width="796" alt="screen shot 2018-03-05 at 2 17 03 pm" src="https://user-images.githubusercontent.com/9213224/36994792-263f05c4-2080-11e8-9d46-9b11ef49962a.png">
-NOTE: There is a working example in `no-pod` branch
-
-### Shared steps
-
-Edit `AppDelegate.h`:
-```diff
-+ @import UserNotifications;
-+
-+ @interface AppDelegate : UIResponder <UIApplicationDelegate,UNUserNotificationCenterDelegate>
-- @interface AppDelegate : UIResponder <UIApplicationDelegate>
-```
 
 Edit `AppDelegate.m`:
 ```diff
@@ -319,25 +141,6 @@ Edit `AppDelegate.m`:
 +   [RNFIRMessaging didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
 + }
 ```
-
-**Add the path of header files into XCode:**
-
-1. Open XCode.
-2. Press `CMD+1` or click the XCode project.
-3. Go to **Build Settings**, selecting **All** and **Combined**.
-4. Search **Header Search Path** in the searchg tab.
-5. Make sure there is a line of `$(SRCROOT)/../node_modules/react-native-fcm/ios`. If no, just add it.
-
-**Add GoogleService-Info.plist:**
-
-Make sure the file is not just moved into the folder. You need to `Right Click` the project folder in XCode and `Add File to <Project Name>`. Select **Copy if needed** in the `Options` page while selecting the file.
-
-**Shared Library Settings:**
-
-- Make sure you see `Pods.xcodeproj` under **Library** folder if you are using Pod install method.
-- Make sure you see `RNFIRMessaging.xcodeproj` under **Library** folder.
-- If you don't see any of these files, please add them by `Right Click` the **Library** folder and `Add File to <Project Name>` to add them back. `Pods.xcodeproj` should be under `ios/Pods/`, and `RNFIRMessaging.xcodeproj` should be under `node_modules/react-native-fcm/ios`.
-- Make sure you see `libRNFIRMessaging.a` under **Link Binary With Libraries** under **Build Phases** tab. If no, drag the file under `RNFIRMessaging.xcodeproj` under **Library** folder into there.
 
 ### Add Capabilities
 - Select your project **Capabilities** and enable:
@@ -384,7 +187,8 @@ import FCM from 'react-native-fcm';
 
 ### 1. requestPermissions
 ```
-const result = await FCM.requestPermissions();
+const options = ['alert', 'sound', 'badge', 'provisional']; // Available for iOS
+const result = await FCM.requestPermissions(options);
 if (!result.status) {
   console.log("Permission not granted");
   return;

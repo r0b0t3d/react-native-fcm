@@ -274,6 +274,11 @@ RCT_EXPORT_MODULE();
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler
 {
     NSMutableDictionary* data = [[NSMutableDictionary alloc] initWithDictionary: notification.request.content.userInfo];
+    if ([data valueForKey:@"local_notification"]) {
+        // Always display local notifications
+        completionHandler(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionSound | UNNotificationPresentationOptionBadge);
+        return;
+    }
     [data setValue:@"will_present_notification" forKey:@"notificationType"];
     NSDictionary* userInfo = @{@"data": data, @"completionHandler": completionHandler};
     [RNFIRMessaging sendNotificationEventWhenAvailable:FCMNotificationReceived data:userInfo];
@@ -469,16 +474,29 @@ RCT_EXPORT_METHOD(deleteInstanceId:(RCTPromiseResolveBlock)resolve rejecter:(RCT
     [self sendEventWithName:FCMTokenRefreshed body:fcmToken];
 }
 
-RCT_EXPORT_METHOD(requestPermissions:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(requestPermissions:(NSArray*)options
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 {
     if (RCTRunningInAppExtension()) {
         resolve(nil);
         return;
     }
     if (@available(iOS 10.0, *)) {
-        UNAuthorizationOptions authOptions = UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge;
-        if (@available(iOS 12.0, *)) {
-            authOptions |= UNAuthorizationOptionProvisional;
+        UNAuthorizationOptions authOptions = UNAuthorizationOptionNone;
+        if ([options containsObject:@"alert"]) {
+            authOptions |= UNAuthorizationOptionAlert;
+        }
+        if ([options containsObject:@"sound"]) {
+            authOptions |= UNAuthorizationOptionSound;
+        }
+        if ([options containsObject:@"badge"]) {
+            authOptions |= UNAuthorizationOptionBadge;
+        }
+        if ([options containsObject:@"provisional"]) {
+            if (@available(iOS 12.0, *)) {
+                authOptions |= UNAuthorizationOptionProvisional;
+            }
         }
         UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
         [center requestAuthorizationWithOptions:authOptions completionHandler:^(BOOL granted, NSError * _Nullable error) {

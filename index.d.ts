@@ -127,12 +127,14 @@ declare module "react-native-fcm" {
     options?: NotificationCategoryOption | NotificationCategoryOption[];
   }
 
+  export type NotificationOption = 'alert' | 'sound' | 'badge' | 'provisional';
+
   export type PermissionStatus = {
     status: boolean;
   }
 
   export class FCM {
-    static requestPermissions(): Promise<PermissionStatus>;
+    static requestPermissions(options?: NotificationOption[]): Promise<PermissionStatus>;
     static getFCMToken(): Promise<string>;
     static on(
       event: "FCMTokenRefreshed",
