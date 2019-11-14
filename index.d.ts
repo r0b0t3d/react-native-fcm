@@ -1,4 +1,4 @@
-declare module "react-native-fcm" {
+declare module "react-native-fcm2" {
   type FCMEventType =
     | "FCMTokenRefreshed"
     | "FCMNotificationReceived"
