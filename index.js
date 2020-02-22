@@ -87,7 +87,10 @@ function prepareNotification(nativeNotif) {
 
 FCM.getInitialNotification = async () => {
   const nativeNoti = await RNFIRMessaging.getInitialNotification();
-  return prepareNotification(nativeNoti);
+  if (nativeNoti) {
+    return prepareNotification(nativeNoti);
+  }
+  return {};
 };
 
 FCM.enableDirectChannel = () => {
