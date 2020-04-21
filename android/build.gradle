@@ -1,37 +1,75 @@
-apply plugin: 'com.android.library'
+buildscript {
+    // The Android Gradle plugin is only required when opening the android folder stand-alone.
+    // This avoids unnecessary downloads and potential conflicts when the library is included as a
+    // module dependency in an application project.
+    if (project == rootProject) {
+        repositories {
+            google()
+            jcenter()
+        }
 
-def DEFAULT_COMPILE_SDK_VERSION             = 28
-def DEFAULT_BUILD_TOOLS_VERSION             = "28.0.2"
-def DEFAULT_TARGET_SDK_VERSION              = 28
-def DEFAULT_GOOGLE_PLAY_SERVICES_VERSION    = "+"
-def DEFAULT_FIREBASE_ANALYTICS_VERSION      = ""
-def DEFAULT_FIREBASE_MESSAGING_VERSION      = ""
+        dependencies {
+            classpath("com.android.tools.build:gradle:3.5.2")
+        }
+    }
+}
+
+plugins {
+    id "io.invertase.gradle.build" version "1.4"
+}
+
+project.ext {
+    set('react-native', [
+        versions: [
+            android           : [
+                minSdk    : 16,
+                targetSdk : 28,
+                compileSdk: 28,
+                // optional as gradle.buildTools comes with one by default
+                // overriding here though to match the version RN uses
+                buildTools: "28.0.3"
+            ],
+
+            firebase          : [
+                bom: "24.1.0",
+            ],
+        ],
+    ])
+}
 
 android {
-    compileSdkVersion project.hasProperty('compileSdkVersion') ? project.compileSdkVersion : DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion project.hasProperty('buildToolsVersion') ? project.buildToolsVersion : DEFAULT_BUILD_TOOLS_VERSION
-
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion project.hasProperty('targetSdkVersion') ? project.targetSdkVersion : DEFAULT_TARGET_SDK_VERSION
-        versionCode 1
-        versionName "1.0"
+        multiDexEnabled true
+    }
+    lintOptions {
+        disable 'GradleCompatible'
+        abortOnError false
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java', 'src/reactnative/java']
+        }
     }
 }
 
 repositories {
-    mavenCentral()
+    google()
+    jcenter()
 }
-
 dependencies {
-    def googlePlayServicesVersion = project.hasProperty('googlePlayServicesVersion') ? project.googlePlayServicesVersion : DEFAULT_GOOGLE_PLAY_SERVICES_VERSION
-    def firebaseAnalyticsVersion = project.hasProperty('firebaseAnalyticsVersion') ? project.firebaseAnalyticsVersion : DEFAULT_FIREBASE_ANALYTICS_VERSION
-    def firebaseMessagingVersion = project.hasProperty('firebaseMessagingVersion') ? project.firebaseMessagingVersion : DEFAULT_FIREBASE_MESSAGING_VERSION
-
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.facebook.react:react-native:+'
-    implementation "com.google.firebase:firebase-analytics:$firebaseAnalyticsVersion"
-    implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVersion"
+    implementation platform("com.google.firebase:firebase-bom:${ReactNative.ext.getVersion("firebase", "bom")}")
+    implementation "com.google.firebase:firebase-analytics"
+    implementation "com.google.firebase:firebase-messaging"
     implementation 'me.leolin:ShortcutBadger:1.1.22@aar'
-    implementation "com.android.support:support-core-utils:28.0.0"
 }
+
+ReactNative.shared.applyPackageVersion()
+ReactNative.shared.applyDefaultExcludes()
+ReactNative.module.applyAndroidVersions()
+ReactNative.module.applyReactNativeDependency("api")
