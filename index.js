@@ -50,39 +50,39 @@ export const NotificationActionType = {
 const RNFIRMessaging = NativeModules.RNFIRMessaging;
 
 const FCM = {};
-
+const ignoreFields = ['title', 'body', 'color', 'sound'];
 function prepareNotification(nativeNotif) {
-  if (Platform.OS === 'android') {
-    return nativeNotif;
-  } else {
-    const notificationObj = {};
-    const dataObj = {};
-    Object.keys(nativeNotif).forEach(notifKey => {
-      const notifVal = nativeNotif[notifKey];
-      if (notifKey === 'aps') {
-        notificationObj.alert = notifVal.alert;
-        notificationObj.sound = notifVal.sound;
-        notificationObj.badgeCount = notifVal.badge;
-        notificationObj.category = notifVal.category;
-        notificationObj.contentAvailable = notifVal['content-available'];
-        notificationObj.threadID = notifVal['thread-id'];
-      } else if (notifKey === 'notificationType') {
-        notificationObj.notificationType = notifVal;
-      } else if (notifKey === '_completionHandlerId') {
-        notificationObj._completionHandlerId = notifVal;
-      } else if (notifKey === 'notification-action') {
-        notificationObj.notificationAction = notifVal;
-      } else if (notifKey !== 'data') {
-        dataObj[notifKey] = notifVal;
-      } else {
-        notificationObj[notifKey] = notifVal;
-      }
-    });
-    if (!notificationObj['data']) {
-      notificationObj.data = dataObj;
+  const notificationObj = {};
+  const dataObj = {};
+  Object.keys(nativeNotif).forEach(notifKey => {
+    const notifVal = nativeNotif[notifKey];
+    if (notifKey === 'aps') {
+      notificationObj.alert = notifVal.alert;
+      notificationObj.sound = notifVal.sound;
+      notificationObj.badgeCount = notifVal.badge;
+      notificationObj.category = notifVal.category;
+      notificationObj.contentAvailable = notifVal['content-available'];
+      notificationObj.threadID = notifVal['thread-id'];
+    } else if (notifKey === 'notificationType') {
+      notificationObj.notificationType = notifVal;
+    } else if (notifKey === '_completionHandlerId') {
+      notificationObj._completionHandlerId = notifVal;
+    } else if (notifKey === 'notification-action') {
+      notificationObj.notificationAction = notifVal;
+    } else if (notifKey !== 'data' && !ignoreFields.includes(notifKey)) {
+      dataObj[notifKey] = notifVal;
+    } else {
+      notificationObj[notifKey] = notifVal;
     }
-    return notificationObj;
-  }
+  });
+  notificationObj.data = {
+    ...dataObj,
+    ...notificationObj.data,
+  };
+  return {
+    ...nativeNotif,
+    ...notificationObj,
+  };
 }
 
 FCM.getInitialNotification = async () => {
@@ -223,7 +223,6 @@ function finish(result) {
         if (Platform.OS === 'ios') {
           RNFIRMessaging.finishWillPresentNotification(this._completionHandlerId, result);
         } else {
-          console.warn("Start present", this);
           this.show_in_foreground = true;
           this.priority = 'max';
           this.vibrate = true;
